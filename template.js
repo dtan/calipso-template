@@ -10,12 +10,6 @@ var calipso = require('lib/calipso');
 exports = module.exports = {
   init: init,
   route: route,
-  about: {
-    description: 'Example module to enable creation of new modules.',
-    author: 'cliftonc',
-    version: '0.1.1',
-    home: 'http://github.com/cliftonc/calipso'
-  },
   install: install,
   reload: reload,
   disable: disable,
