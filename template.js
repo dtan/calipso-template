@@ -10,6 +10,7 @@ var rootpath = process.cwd() + '/',
  * Note that any hooks must be exposed here to be seen by Calipso
  */
 exports = module.exports = {
+  routes: routes,
   init: init,
   route: route,
   install: install,
@@ -20,9 +21,19 @@ exports = module.exports = {
   },
   depends:["content","contentTypes"],
   last: true,
-  // Exposed function for calling via getModuleFn
   templatePage: templatePage
 };
+
+/**
+ * Routes this module will respond to
+ */
+function routes() {
+  return [
+    {path: /.*/, fn: allPages,template: 'templateAll',block: 'side.template.all'},
+    {path: 'GET /template', fn: templatePage, template: 'templateShow',block: 'content.template'},
+    {path: 'GET /templateSecure', fn: templatePage, permit: calipso.permissions.hasPermission('template:permission'), template: 'templateShow',block: 'content.template'}
+  ];
+}
 
 /**
  * Routing function, this is executed by Calipso in response to a http request (if enabled)
@@ -38,16 +49,15 @@ function route(req, res, module, app, next) {
 
 };
 
-
 /**
  * Initialisation function, this is executed by calipso as the application boots up
  */
 function init(module, app, next) {
 
-  calipso.e.addEvent('TEMPLATE_EVENT');
+  calipso.e.addEvent('TEMPLATE_EVENT',{hookio:true});
 
   // Version event listeners
-  calipso.e.custom('TEMPLATE_EVENT','PING',module.name,templatePing);
+  calipso.e.custom('TEMPLATE_EVENT', 'PING', module.name, templatePing);
   calipso.e.pre('CONTENT_CREATE',module.name,templateEvent);
   calipso.e.post('CONTENT_CREATE',module.name,templateEvent);
   calipso.e.pre('CONTENT_UPDATE',module.name,templateEvent);
@@ -55,37 +65,17 @@ function init(module, app, next) {
   calipso.e.pre('CONTENT_CREATE_FORM',module.name,formAlter);
   calipso.e.pre('CONTENT_UPDATE_FORM',module.name,formAlter);
 
-  calipso.lib.step(
+  // Define permissions
+  calipso.permissions.addPermission("template:permission","Access to secure template page");
 
-  function defineRoutes() {
-
-    // Add a route to every page, notice the 'end:false' to ensure block further routing
-    module.router.addRoute(/.*/, allPages, {
-      end: false,
-      template: 'templateAll',
-      block: 'side.template.all'
-    }, this.parallel());
-
-    // Page
-    module.router.addRoute('GET /template', templatePage, {
-      template: 'templateShow',
-      block: 'content.template'
-    }, this.parallel());
-
-  }, function done() {
-
-    // Any schema configuration goes here
-    next();
-
-  });
-
+  next();
 
 };
 
 /**
  * Simple template page function
  */
-function templatePage(req, res, template, block, next) {
+function templatePage(req, res, options, next) {
 
   // Set any variables
   var myVariable = "Hello World";
@@ -100,11 +90,12 @@ function templatePage(req, res, template, block, next) {
   };
 
   // Raise a ping
-  calipso.e.custom_emit('TEMPLATE_EVENT','PING',{req:req}, function(options) {
+  calipso.e.custom_emit('TEMPLATE_EVENT', 'PING', {data:'Hello', pid: process.pid }, function(eventData) {
 
     // Render the item via the template provided above
-    calipso.theme.renderItem(req, res, template, block, {
-      item: item
+    calipso.theme.renderItem(req, res, options.templateFn, options.block, {
+      item: item,
+      options: options
     },next);
 
   });
@@ -137,7 +128,7 @@ function allPages(req, res, template, block, next) {
 /**
  * Function called by event listeners
  */
-function templateEvent(event,content,next) {
+function templateEvent(event, content, next) {
 
   // Content - fires
   console.log(event + " @ " + content.title);
@@ -148,11 +139,13 @@ function templateEvent(event,content,next) {
 /**
  * Function called by event listeners
  */
-function templatePing(event,options,next) {
+function templatePing(event, data, next) {
+
+  console.log(process.pid + " received " + data.data + " from " + data.pid);
 
   // Req is passed through by the event emitter (specifically, not normally done)
-  options.req.flash('info','Fired from an ' + event + ' listener in the page rendering process ... You are: ' + (options.req.session.user ? options.req.session.user.username : " The Invisible Man/Woman!"));
-  return next();
+  // options.req.flash('info','Fired from an ' + event + ' listener in the page rendering process ... You are: ' + (options.req.session.user ? options.req.session.user.username : " The Invisible Man/Woman!"));
+  return next({data:"Goodbye",pid:process.pid});
 
 }
 
