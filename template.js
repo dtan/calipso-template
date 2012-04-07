@@ -42,7 +42,7 @@ function route(req, res, module, app, next) {
 
   // Menu items
   //res.menu.primary.push({ name: 'Template', url: '/template', regexp: /template/});
-  res.menu.primary.addMenuItem({name:'Template',path:'template',url:'/template',description:'Template module ...',security:[]});
+  res.menu.primary.addMenuItem(req, {name:'Template',path:'template',url:'/template',description:'Template module ...',security:[]});
 
   // Router
   module.router.route(req, res, next);
@@ -131,7 +131,7 @@ function allPages(req, res, template, block, next) {
 function templateEvent(event, content, next) {
 
   // Content - fires
-  console.log(event + " @ " + content.title);
+  console.log('TEMPLATE MODULE received ' + event + " @ " + content.title);
   return next();
 
 }
