@@ -31,7 +31,7 @@ function routes() {
   return [
     {path: /.*/, fn: allPages,template: 'templateAll',block: 'side.template.all'},
     {path: 'GET /template', fn: templatePage, template: 'templateShow',block: 'content.template'},
-    {path: 'GET /templateSecure', fn: templatePage, permit: calipso.permissions.hasPermission('template:permission'), template: 'templateShow',block: 'content.template'}
+    {path: 'GET /templateSecure', fn: templatePage, permit: calipso.permission.Helper.hasPermission('template:permission'), template: 'templateShow',block: 'content.template'}
   ];
 }
 
@@ -66,7 +66,7 @@ function init(module, app, next) {
   calipso.e.pre('CONTENT_UPDATE_FORM',module.name,formAlter);
 
   // Define permissions
-  calipso.permissions.addPermission("template:permission","Access to secure template page");
+  calipso.permission.Helper.addPermission("template:permission","Access to secure template page");
 
   next();
 
